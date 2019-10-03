@@ -1,6 +1,6 @@
 -include .env
 
-VERSION := $(shell git describe --tags)
+VERSION := $(shell git describe --tags --always)
 BUILD := $(shell git rev-parse --short HEAD)
 PROJECTNAME := $(shell basename "$(PWD)")
 
@@ -18,6 +18,10 @@ PID := /tmp/.$(PROJECTNAME).pid
 # Make is verbose in Linux. Make it silent.
 MAKEFLAGS += --silent
 
+##default: Default behaviour
+default:
+	@echo
+	@echo see make help
 ## gen_pb: Generate protobuffer file from proto file with grpc plugin included.
 gen_pb: 
 	@echo
