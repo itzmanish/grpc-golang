@@ -27,6 +27,7 @@ gen_pb:
 	@echo
 	@echo "Generating protobuffer file from proto."
 	@protoc greet/greetpb/greet.proto --go_out=plugins=grpc:. 
+	@protoc calculator/calculatorpb/calculator.proto --go_out=plugins=grpc:. 
 	@echo
 
 .PHONY: help
