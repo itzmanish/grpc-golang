@@ -57,6 +57,30 @@ func (*server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
 	}
 }
 
+func (*server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) error {
+	fmt.Println("Bidirection server invoked")
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			log.Fatalf("end of file err: %v", err)
+			return nil
+		}
+		if err != nil {
+			log.Fatalf("Error on recieving: %v\n", err)
+			return err
+		}
+		firstName := req.GetGreeting().GetFirstName()
+		result := "Hello " + firstName + "! "
+		err = stream.Send(&greetpb.GreetEveryoneResponse{
+			Result: result,
+		})
+		if err != nil {
+			log.Fatalf("Error on sending stream: %v\n", err)
+			return err
+		}
+	}
+}
+
 func main() {
 	fmt.Println("Server is starting at 0.0.0.0:50051")
 

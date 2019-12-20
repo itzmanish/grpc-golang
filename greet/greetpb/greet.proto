@@ -5,7 +5,6 @@ package greet;
 option go_package="greetpb";
 
 message Greet{
-
   string first_name=1;
   string last_name=2;
 }
@@ -34,6 +33,14 @@ message LongGreetResponse{
   string result=1;
 }
 
+message GreetEveryoneRequest{
+  Greet greeting=1;
+}
+
+message GreetEveryoneResponse{
+  string result=1;
+}
+
 service GreetService{
   // Unary service
   rpc Greet(GreetRequest) returns (GreetResponse) {};
@@ -43,5 +50,8 @@ service GreetService{
 
   // streaming client rpc
   rpc LongGreet (stream LongGreetRequest) returns (LongGreetResponse) {};
+
+  // BiDi streaming
+  rpc GreetEveryone (stream GreetEveryoneRequest) returns (stream GreetEveryoneResponse) {};
 
 }
