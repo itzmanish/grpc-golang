@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 
 	"github.com/itzmanish/grpc-go/calculator/calculatorpb"
 	"google.golang.org/grpc"
@@ -20,7 +21,8 @@ func main() {
 
 	c := calculatorpb.NewCalculatorServiceClient(conn)
 	// unaryDo(c)
-	serverStream(c)
+	// serverStream(c)
+	clientStream(c)
 }
 
 func unaryDo(c calculatorpb.CalculatorServiceClient) {
@@ -56,4 +58,25 @@ func serverStream(c calculatorpb.CalculatorServiceClient) {
 		}
 		fmt.Println(res.GetPrimeFactor())
 	}
+}
+
+func clientStream(c calculatorpb.CalculatorServiceClient) {
+	fmt.Println("client streaming started")
+	request := []int32{2, 3, 5, 6, 8, 45, 7, 5, 56, 67}
+	stream, err := c.ComputeAverage(context.Background())
+	if err != nil {
+		log.Fatalln(err)
+	}
+	for _, req := range request {
+		stream.Send(&calculatorpb.ComputeAverageRequest{
+			Number: req,
+		})
+		time.Sleep(1000 * time.Millisecond)
+		fmt.Println(req)
+	}
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(res)
 }
