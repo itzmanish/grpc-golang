@@ -100,10 +100,7 @@ func doClientStreaming(c greetpb.GreetServiceClient) {
 	stream, err := c.LongGreet(context.Background())
 	for _, req := range request {
 		fmt.Println(req)
-		err := stream.Send(req)
-		if err != nil {
-			log.Fatalf("error: %v", err)
-		}
+		stream.Send(req)
 		time.Sleep(1000 * time.Millisecond)
 	}
 	res, err := stream.CloseAndRecv()
