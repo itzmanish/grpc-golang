@@ -22,7 +22,8 @@ func main() {
 	c := calculatorpb.NewCalculatorServiceClient(conn)
 	// unaryDo(c)
 	// serverStream(c)
-	clientStream(c)
+	// clientStream(c)
+	BiDiStreaming(c)
 }
 
 func unaryDo(c calculatorpb.CalculatorServiceClient) {
@@ -79,4 +80,45 @@ func clientStream(c calculatorpb.CalculatorServiceClient) {
 		log.Fatalln(err)
 	}
 	fmt.Println(res)
+}
+
+func BiDiStreaming(c calculatorpb.CalculatorServiceClient) {
+	fmt.Println("BiDirectional streaming started")
+	stream, err := c.FindMaximum(context.Background())
+	if err != nil {
+		log.Fatalf("error on creating stream: %v", err)
+	}
+	request := []int32{2, 41, 67, 2, 6, 4, 765, 3, 5, 6, 2465, 567463, 3453, 564, 9}
+	waitc := make(chan struct{})
+
+	// Don't forget to use go routine ever
+	// Goroutine for sending  req
+	go func() {
+		for _, req := range request {
+			log.Printf("sending: %v\n", req)
+			stream.Send(&calculatorpb.FindMaximumRequest{
+				Number: req,
+			})
+			time.Sleep(500 * time.Millisecond)
+		}
+		stream.CloseSend()
+	}()
+	// Goroutine for recieving
+	go func() {
+		for {
+			res, err := stream.Recv()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Fatalf("err on recieving in client: %v", err)
+				break
+			}
+			log.Printf("Maximum number: %v\n", res.GetMaximum())
+		}
+		close(waitc)
+	}()
+
+	<-waitc
+
 }
