@@ -192,8 +192,8 @@ func doUnaryWithDeadline(c greetpb.GreetServiceClient, timeout time.Duration) {
 		if ok {
 			if errMsg.Code() == codes.DeadlineExceeded {
 				fmt.Println("Request timeout.")
+				return
 			}
-			return
 		} else {
 			fmt.Printf("Something bad happened with grpc: %v", errMsg)
 			return
