@@ -7,6 +7,9 @@ import (
 	"log"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/itzmanish/grpc-go/calculator/calculatorpb"
 	"google.golang.org/grpc"
 )
@@ -23,7 +26,8 @@ func main() {
 	// unaryDo(c)
 	// serverStream(c)
 	// clientStream(c)
-	BiDiStreaming(c)
+	// biDiStreaming(c)
+	doErrorUnary(c)
 }
 
 func unaryDo(c calculatorpb.CalculatorServiceClient) {
@@ -82,7 +86,7 @@ func clientStream(c calculatorpb.CalculatorServiceClient) {
 	fmt.Println(res)
 }
 
-func BiDiStreaming(c calculatorpb.CalculatorServiceClient) {
+func biDiStreaming(c calculatorpb.CalculatorServiceClient) {
 	fmt.Println("BiDirectional streaming started")
 	stream, err := c.FindMaximum(context.Background())
 	if err != nil {
@@ -118,7 +122,30 @@ func BiDiStreaming(c calculatorpb.CalculatorServiceClient) {
 		}
 		close(waitc)
 	}()
-
 	<-waitc
+}
 
+func doErrorUnary(c calculatorpb.CalculatorServiceClient) {
+	// Correct call
+	doErrorCall(c, int32(9))
+	// Error call
+	doErrorCall(c, int32(-3))
+}
+
+func doErrorCall(c calculatorpb.CalculatorServiceClient, n int32) {
+	res, err := c.SquareRoot(context.Background(), &calculatorpb.SquareRootRequest{Number: n})
+	if err != nil {
+		errMsg, ok := status.FromError(err)
+		if ok {
+			// Actual error from grpc raised
+			fmt.Println(errMsg.Message())
+			if errMsg.Code() == codes.InvalidArgument {
+				fmt.Println("We probably sent a negative number.")
+			}
+		} else {
+			log.Fatalf("Got error somewhere: %v", err)
+		}
+		return
+	}
+	fmt.Printf("square root of %v : %v\n", n, res.GetSquareRoot())
 }
