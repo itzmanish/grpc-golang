@@ -19,13 +19,16 @@ import (
 func main() {
 
 	fmt.Println("This is client ")
-
-	certFile := "ssl/CA.crt"
-	cred, sslErr := credentials.NewClientTLSFromFile(certFile, "")
-	if sslErr != nil {
-		log.Fatalf("Error loading ceritficate: %v", sslErr)
+	tls := false
+	opts := grpc.WithInsecure()
+	if tls {
+		certFile := "ssl/CA.crt"
+		cred, sslErr := credentials.NewClientTLSFromFile(certFile, "")
+		if sslErr != nil {
+			log.Fatalf("Error loading ceritficate: %v", sslErr)
+		}
+		opts = grpc.WithTransportCredentials(cred)
 	}
-	opts := grpc.WithTransportCredentials(cred)
 
 	conn, err := grpc.Dial("localhost:50051", opts)
 

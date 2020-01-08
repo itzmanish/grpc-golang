@@ -107,20 +107,26 @@ func (*server) GreetWithDeadline(ctx context.Context, req *greetpb.GreetWithDead
 func main() {
 	fmt.Println("Server is starting at 0.0.0.0:50051")
 
-	keyFile := "ssl/server.pem"
-	certFile := "ssl/server.crt"
-
 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
-	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
+
+	opts := []grpc.ServerOption{}
+	tls := true
+	if tls {
+		keyFile := "ssl/server.pem"
+		certFile := "ssl/server.crt"
+
+		if err != nil {
+			log.Fatalf("Failed to listen: %v", err)
+		}
+
+		cred, sslErr := credentials.NewServerTLSFromFile(certFile, keyFile)
+		if sslErr != nil {
+			log.Fatalf("Some error occured on loading ssl certificates: %v", sslErr)
+		}
+		opts = append(opts, grpc.Creds(cred))
 	}
 
-	cred, sslErr := credentials.NewServerTLSFromFile(certFile, keyFile)
-	if sslErr != nil {
-		log.Fatalf("Some error occured on loading ssl certificates: %v", sslErr)
-	}
-
-	s := grpc.NewServer(grpc.Creds(cred))
+	s := grpc.NewServer(opts...)
 	greetpb.RegisterGreetServiceServer(s, &server{})
 
 	if err := s.Serve(lis); err != nil {
