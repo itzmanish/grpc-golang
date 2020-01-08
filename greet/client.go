@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"google.golang.org/grpc/credentials"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -18,7 +20,14 @@ func main() {
 
 	fmt.Println("This is client ")
 
-	conn, err := grpc.Dial("127.0.0.1:50051", grpc.WithInsecure())
+	certFile := "ssl/CA.crt"
+	cred, sslErr := credentials.NewClientTLSFromFile(certFile, "")
+	if sslErr != nil {
+		log.Fatalf("Error loading ceritficate: %v", sslErr)
+	}
+	opts := grpc.WithTransportCredentials(cred)
+
+	conn, err := grpc.Dial("localhost:50051", opts)
 
 	if err != nil {
 		log.Fatalf("Failed to connect to server %v", err)
