@@ -7,6 +7,10 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"reflect"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -23,10 +27,41 @@ var collection *mongo.Collection
 type server struct{}
 
 type blogItem struct {
-	ID       primitive.ObjectID `bson:"_id, omitempty"`
-	AuthorID string             `bson:"author_id"`
-	Title    string             `bson:"title"`
-	Content  string             `bson:"content"`
+	ID      primitive.ObjectID `bson:"_id, omitempty"`
+	Author  string             `bson:"author_id"`
+	Title   string             `bson:"title"`
+	Content string             `bson:"content"`
+}
+
+func (*server) CreateBlog(ctx context.Context, req *blogpb.CreateBlogRequest) (*blogpb.CreateBlogResponse, error) {
+	fmt.Println("Create blog request..")
+	blog := req.GetBlog()
+
+	data := blogItem{
+		Author:  blog.GetAuthor(),
+		Title:   blog.GetTitle(),
+		Content: blog.GetContent(),
+	}
+	res, err := collection.InsertOne(context.Background(), data)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal,
+			fmt.Sprintf("Internal server error: %v", err))
+	}
+	oid, ok := res.InsertedID.(primitive.ObjectID)
+	fmt.Println(oid, reflect.TypeOf(oid))
+	if !ok {
+		return nil, status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Error occured while converting objectid: %v", err))
+	}
+	return &blogpb.CreateBlogResponse{
+		Blog: &blogpb.Blog{
+			Id:      oid.Hex(),
+			Author:  blog.GetAuthor(),
+			Title:   blog.GetTitle(),
+			Content: blog.GetContent(),
+		},
+	}, nil
 }
 
 func main() {
@@ -39,7 +74,7 @@ func main() {
 	}
 
 	fmt.Println("Connecting to mongoDB...")
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://rudra:rudra108@ds361488.mlab.com:61488"))
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
 		log.Fatalln(err)
 	}
